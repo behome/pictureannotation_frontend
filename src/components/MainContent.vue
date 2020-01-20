@@ -82,25 +82,7 @@
                 chosenDir:'',
                 boxType: '1',
                 picList:[
-                    // {
-                    //     name: '',
-                    //     imgUrl:'http://192.168.1.112:8090/images/000001.jpg',
-                    //     width: 353,
-                    //     height: 265,
-                    //     activateBoxIndex: 0,
-                    //     boxes:[
-                    //     ],
-                    // },
-                    // {
-                    //     name: '',
-                    //     imgUrl:'http://192.168.1.112:8090/images/000003.jpg',
-                    //     width: 768,
-                    //     height: 1024,
-                    //     activateBoxIndex: 0,
-                    //     boxes:[
-                    //
-                    //     ],
-                    // }
+
                 ],
                 activeIndex: 0,
                 curImgIndex: 0,
@@ -121,15 +103,16 @@
             startDraw(e){
                 e.preventDefault();
             },
+            // 鼠标移动，更新矩形框信息
             updateBox(e){
-                if(this.enableMove || this.enableScalePoint1 || this.enableScalePoint2){
+                if(this.enableMove || this.enableScalePoint1 || this.enableScalePoint2){// 如果确认有激活的点或者矩形框内部，则计算鼠标偏移量
                     var index = this.picList[this.curImgIndex].activateBoxIndex;
                     var diffX = e.pageX - this.startX;
                     var diffY = e.pageY - this.startY;
                     this.startX = e.pageX;
                     this.startY = e.pageY;
                 }
-                if(this.enableMove){
+                if(this.enableMove){// 移动矩形框
                     this.picList[this.curImgIndex].boxes[index].offsetX1 += diffX;
                     this.picList[this.curImgIndex].boxes[index].offsetY1 += diffY;
                     this.picList[this.curImgIndex].boxes[index].offsetX2 += diffX;
@@ -138,24 +121,28 @@
                     this.picList[this.curImgIndex].boxes[index].y1 += diffY;
                     this.picList[this.curImgIndex].boxes[index].x2 += diffX;
                     this.picList[this.curImgIndex].boxes[index].y2 += diffY;
-                }else if(this.enableScalePoint1){
+                }else if(this.enableScalePoint1){// 左上角缩放
                     // this.picList[this.curImgIndex].boxes[index].offsetX = e.offsetX;
                     this.picList[this.curImgIndex].boxes[index].x1 += diffX;
                     this.picList[this.curImgIndex].boxes[index].y1 += diffY;
                     this.handleBox(index);
-                }else if(this.enableScalePoint2){
+                }else if(this.enableScalePoint2){// 右下角缩放
                     this.picList[this.curImgIndex].boxes[index].x2 += diffX;
                     this.picList[this.curImgIndex].boxes[index].y2 += diffY;
                     this.handleBox(index);
                 }
             },
+            // 更新当前图片指定矩形框的右上角与左下角坐标
             handleBox(index){
                 var box = this.picList[this.curImgIndex].boxes[index];
+                // 由于移动缩放点的时候，缩放点不会保持原来左上右下的搭配，有可能原来左上操作点的x坐标跑到原来右下操作点的右边
+                // 所以需要根据两个操作点的xy较小较大值，来更新实际的矩形框坐标
                 this.picList[this.curImgIndex].boxes[index].offsetX1 = box.x1 > box.x2 ? box.x2 : box.x1;
                 this.picList[this.curImgIndex].boxes[index].offsetY1 = box.y1 > box.y2 ? box.y2 : box.y1;
                 this.picList[this.curImgIndex].boxes[index].offsetX2 = box.x1 > box.x2 ? box.x1 : box.x2;
                 this.picList[this.curImgIndex].boxes[index].offsetY2 = box.y1 > box.y2 ? box.y1 : box.y2;
             },
+            // 下一张图片
             nextImgIndex(){
                 this.curImgIndex += 1;
                 if(this.curImgIndex >= this.picList.length){
@@ -169,6 +156,7 @@
                     )
                 }
             },
+            // 上一张图片
             aboveImgIndex(){
                 this.curImgIndex -= 1;
                 if(this.curImgIndex < 0){
@@ -182,41 +170,45 @@
                     )
                 }
             },
+            // 鼠标左键落下，激活当前矩形框，并根据点击位置，确认下一步动作
             activateThis(e, index){
+                // 获取点击的位置
                 this.startX = e.pageX;
                 this.startY = e.pageY;
-                if(e.target.className === 'box-content'){
+
+                if(e.target.className === 'box-content'){// 如果点击在矩形框内部，则下一步准备移动矩形框整体
                     this.enableMove = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
-                }else if(e.target.className === 'box-point-1'){
+                }else if(e.target.className === 'box-point-1'){// 如果点击在左上角点，则下一步准备移动左上角点，并缩放
                     this.enableScalePoint1 = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
-                }else if(e.target.className === 'box-point-2'){
+                }else if(e.target.className === 'box-point-2'){// 如果点击在右下角点，则下一步准备移动右下角点，并缩放
                     this.enableScalePoint2 = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
-                }else if(e.target.className === 'imgArea'){
-                    if(this.addAnnotation){
+                }else if(e.target.className === 'imgArea'){// 如果点击在图片区域，则该处没有矩形框，则需要判断是否增加矩形框
+                    if(this.addAnnotation){// 确认添加矩形框，并激活
                         this.isDown = true;
                         var offsetX = e.offsetX;
                         var offsetY = e.offsetY;
                         this.picList[this.curImgIndex].boxes.push(
                             {
-                                offsetX1: offsetX,
-                                offsetY1: offsetY,
-                                offsetX2: offsetX + 20,
-                                offsetY2: offsetY + 20,
-                                x1: offsetX,
-                                y1: offsetY,
-                                x2: offsetX + 20,
-                                y2: offsetY + 20,
-                                id: 0,
-                                label: this.boxType
+                                offsetX1: offsetX, // 矩形框左上角点x坐标
+                                offsetY1: offsetY, // 矩形框左上角点y坐标
+                                offsetX2: offsetX + 20, // 矩形框右下角点x坐标
+                                offsetY2: offsetY + 20, // 矩形框右下角点y坐标
+                                x1: offsetX, // 矩形框左上角缩放操作点x坐标
+                                y1: offsetY, // 矩形框左上角缩放操作点y坐标
+                                x2: offsetX + 20, // 矩形框右下角缩放操作点x坐标
+                                y2: offsetY + 20, // 矩形框右下角缩放操作点y坐标
+                                id: 0, // 保留字段id，还没使用
+                                label: this.boxType // 矩形框类型，分为单字矩形框，与行矩形框
                             }
                         );
                         this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length - 1;
                     }
                 }
             },
+            // 是否允许新建矩形框
             enableDisableAdd(){
                 this.addAnnotation = !this.addAnnotation;
                 if(this.addAnnotation){
@@ -232,16 +224,19 @@
                 //     console.log("jiji");
                 // }
             },
+            // 游标上抬取消所有移动
             disableMove(e){
                 this.enableMove = false;
                 this.enableScalePoint1 = false;
                 this.enableScalePoint2 = false;
                 this.isDown = false;
             },
+            // 右键删除一矩形框
             deleteBox(e, index){
                 e.preventDefault();
                 this.picList[this.curImgIndex].boxes.splice(index, 1);
             },
+            // 获取一个目录下的所有图片信息
             getBoxInfo(){
                 if(this.chosenDir === undefined || this.chosenDir === ''){
                     this.$message(
@@ -267,6 +262,7 @@
                     })
                 }
             },
+            // 处理有后端获取的矩形框的信息，转化为前端能够渲染的信息
             handleBoxInfo(data){
                 this.picList = [];
                 for(var i = 0, length = data.length; i < length; i++){
@@ -312,6 +308,7 @@
                 this.curImgIndex = 0;
                 this.isLoad = true;
             },
+            // 保存当前图片矩形框信息
             saveThisPic(){
                 var form = new FormData();
                 form.append("data", JSON.stringify(this.picList[this.curImgIndex]));
@@ -341,6 +338,7 @@
                    console.log(err);
                 });
             },
+            // 获取后端图片目录
             getDirs(){
                 this.$ajax.get(
                     'http://192.168.1.112:8009/backend/getDirs'
@@ -355,6 +353,7 @@
                     console.log(err);
                 });
             },
+            // 调试使用，显示当前矩形框类型的ratio按钮值
             showBoxType(){
               console.log(this.boxType);
             }
