@@ -1,7 +1,8 @@
 <template>
     <div style="width: 100%; height: 800px; text-align: center;">
-        <div style="width: 100%; height: 800px; text-align: center; position: relative; "
-             ref="imageDom">
+        <div style="width: 100%; text-align: center; position: relative; "
+             ref="imageDom"
+             v-contextmenu:contextmenu>
             <div :style="{
                 border: 'black solid 1px',
                 backgroundColor: 'white',
@@ -24,9 +25,9 @@
                 </div>
             </div>
         </div>
-        <div>
-            <el-button type="primary" @click="downLoadPicture">保存成图片</el-button>
-        </div>
+        <v-contextmenu ref="contextmenu">
+            <v-contextmenu-item @click="downLoadPicture">保存成图片</v-contextmenu-item>
+        </v-contextmenu>
     </div>
 </template>
 
