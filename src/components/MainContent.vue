@@ -35,7 +35,7 @@
                          class="box-point-2 pointer"
                          :data-key="index"
                          @mousedown="activateThis($event, index)"
-                         :style="{left: boxItem.x2 - 3 + 'px', top: boxItem.y2 - 3 + 'px'}"
+                         :style="{left: boxItem.x2 - 1 + 'px', top: boxItem.y2 - 1 + 'px'}"
                          >
 
                     </div>
@@ -219,6 +219,9 @@
                             }
                         );
                         this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length - 1;
+                    }else{
+                        this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length;
+                        this.disableMove(e);
                     }
                 }
                 // console.log(this.picList[this.curImgIndex].activateBoxIndex);
@@ -256,10 +259,11 @@
                     type: 'warning'
                 }).then(() => {
                     this.picList[this.curImgIndex].boxes.splice(index, 1);
+                    this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length;
                 }).catch(() => {
 
                 });
-
+                this.disableMove(e);
             },
             // 获取一个目录下的所有图片信息
             getBoxInfo(){
@@ -380,7 +384,7 @@
         z-index: 9999;
     }
     .box-content{
-        border: chartreuse solid 1px;
+        border: chartreuse solid 2px;
         position: absolute;
         z-index: 999;
         cursor: move;
