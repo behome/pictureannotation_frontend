@@ -1,4 +1,4 @@
-<template>
+<template xmlns:v-contextmenu="http://www.w3.org/1999/xhtml">
     <div style="width: 100%; height: 800px; text-align: center;">
         <div style="width: 100%; text-align: center; position: relative; "
              ref="imageDom"
