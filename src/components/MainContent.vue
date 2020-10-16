@@ -19,20 +19,23 @@
                 <div class="box" v-for="(boxItem, index) in picList[curImgIndex].boxes" v-if="boxItem.label === boxType"
                 @contextmenu="deleteBox($event, index)">
                     <div v-if="index === picList[curImgIndex].activateBoxIndex"
-                         class="box-point-1" :data-key="index"
+                         class="box-point-1 pointer" :data-key="index"
                          :style="{left: boxItem.x1 - 3 + 'px', top: boxItem.y1 - 3 + 'px'}"
                          @mousedown="activateThis($event, index)">
                     </div>
                     <div class="box-content"
                          :data-key="index"
                          @mousedown="activateThis($event, index)"
+                         @dblclick="editContent"
+                         style="color: red;"
                          :style="{width: boxItem.offsetX2 - boxItem.offsetX1 + 'px', height: boxItem.offsetY2 - boxItem.offsetY1 + 'px', top: boxItem.offsetY1 + 'px', left: boxItem.offsetX1 + 'px'} ">
+                        {{boxItem.charStr}}
                     </div>
                     <div v-if="index === picList[curImgIndex].activateBoxIndex"
-                         class="box-point-2"
+                         class="box-point-2 pointer"
                          :data-key="index"
                          @mousedown="activateThis($event, index)"
-                         :style="{left: boxItem.x2 - 3 + 'px', top: boxItem.y2 - 3 + 'px'}"
+                         :style="{left: boxItem.x2 - 1 + 'px', top: boxItem.y2 - 1 + 'px'}"
                          >
 
                     </div>
@@ -40,17 +43,17 @@
             </div>
         </div>
 
-        <div>
+<!--        <div>
 
-        </div>
+        </div>-->
         <div class="toolbox">
             <div>
                 <el-select v-model="chosenDir" placeholder="请选择">
                     <el-option
-                            v-for="item in dirs"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
+                    v-for="item in dirs"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
                     </el-option>
                 </el-select>
                 <el-button type="primary" @click="getBoxInfo" size="medium" style="margin-left: 10px;">载入图片</el-button>
@@ -64,9 +67,19 @@
                 <el-radio v-model="boxType" label="1" style="margin-top: 8px; margin-left: 20%;">行边框</el-radio>
                 <el-radio v-model="boxType" label="2" style="margin-top: 8px;" @change="showBoxType">字边框</el-radio>
             </div>
+            <div style="margin-top: 20px; width: 98%; background-color: white; border-radius: 5px; margin-left: auto; margin-right: auto;height: 28px;">
+<!--                <span style="text-align: center; margin-top: 5px;">识别文字:</span>-->
+                <el-tag effect="dark" size="medium" style="width: 25%;">识别文字</el-tag>
+                <el-input ref="inputRef" v-model="activateChar" style="width: 75%; " size="mini" :disabled="boxType === '1'" @input="saveBoxChar"></el-input>
+            </div>
+            <div  style="margin-top: 20px; text-align: center; font-size: 60px; width: 44%; background-color: white; border-radius: 5px; margin-left: auto; margin-right: auto;height: 50%;">
+                {{activateChar}}
+            </div>
             <div style="margin-top: 20px; ">
                 <el-button type="primary" @click="saveThisPic">保存当前图片信息</el-button>
+                <el-button type="primary" @click="cacheAndPreview">缓存并预览</el-button>
             </div>
+
         </div>
     </div>
 
@@ -80,6 +93,7 @@
                 isLoad: false,
                 dirs:[],
                 chosenDir:'',
+                curDir: '',
                 boxType: '1',
                 picList:[
 
@@ -93,7 +107,8 @@
                 enableScalePoint1: false,
                 enableScalePoint2: false,
                 startX: 0,
-                startY: 0
+                startY: 0,
+                activateChar: ''
             }
         },
         mounted(){
@@ -105,8 +120,8 @@
             },
             // 鼠标移动，更新矩形框信息
             updateBox(e){
+                var index = this.picList[this.curImgIndex].activateBoxIndex;
                 if(this.enableMove || this.enableScalePoint1 || this.enableScalePoint2){// 如果确认有激活的点或者矩形框内部，则计算鼠标偏移量
-                    var index = this.picList[this.curImgIndex].activateBoxIndex;
                     var diffX = e.pageX - this.startX;
                     var diffY = e.pageY - this.startY;
                     this.startX = e.pageX;
@@ -175,14 +190,13 @@
                 // 获取点击的位置
                 this.startX = e.pageX;
                 this.startY = e.pageY;
-
                 if(e.target.className === 'box-content'){// 如果点击在矩形框内部，则下一步准备移动矩形框整体
                     this.enableMove = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
-                }else if(e.target.className === 'box-point-1'){// 如果点击在左上角点，则下一步准备移动左上角点，并缩放
+                }else if(e.target.className === 'box-point-1 pointer'){// 如果点击在左上角点，则下一步准备移动左上角点，并缩放
                     this.enableScalePoint1 = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
-                }else if(e.target.className === 'box-point-2'){// 如果点击在右下角点，则下一步准备移动右下角点，并缩放
+                }else if(e.target.className === 'box-point-2 pointer'){// 如果点击在右下角点，则下一步准备移动右下角点，并缩放
                     this.enableScalePoint2 = true;
                     this.picList[this.curImgIndex].activateBoxIndex = index;
                 }else if(e.target.className === 'imgArea'){// 如果点击在图片区域，则该处没有矩形框，则需要判断是否增加矩形框
@@ -201,12 +215,17 @@
                                 x2: offsetX + 20, // 矩形框右下角缩放操作点x坐标
                                 y2: offsetY + 20, // 矩形框右下角缩放操作点y坐标
                                 id: 0, // 保留字段id，还没使用
-                                label: this.boxType // 矩形框类型，分为单字矩形框，与行矩形框
+                                label: this.boxType, // 矩形框类型，分为单字矩形框，与行矩形框
                             }
                         );
                         this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length - 1;
+                    }else{
+                        this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length;
+                        this.disableMove(e);
                     }
                 }
+                // console.log(this.picList[this.curImgIndex].activateBoxIndex);
+                this.activateChar = this.picList[this.curImgIndex].boxes[this.picList[this.curImgIndex].activateBoxIndex].charStr;
             },
             // 是否允许新建矩形框
             enableDisableAdd(){
@@ -234,7 +253,17 @@
             // 右键删除一矩形框
             deleteBox(e, index){
                 e.preventDefault();
-                this.picList[this.curImgIndex].boxes.splice(index, 1);
+                this.$confirm('是否删除该矩形框?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.picList[this.curImgIndex].boxes.splice(index, 1);
+                    this.picList[this.curImgIndex].activateBoxIndex = this.picList[this.curImgIndex].boxes.length;
+                }).catch(() => {
+
+                });
+                this.disableMove(e);
             },
             // 获取一个目录下的所有图片信息
             getBoxInfo(){
@@ -264,55 +293,17 @@
             },
             // 处理有后端获取的矩形框的信息，转化为前端能够渲染的信息
             handleBoxInfo(data){
-                this.picList = [];
-                for(var i = 0, length = data.length; i < length; i++){
-                    var picDict = {};
-                    picDict['name'] = data[i].name;
-                    picDict['imgUrl'] = 'http://192.168.1.112:8090/images/pic/' + this.chosenDir + '/' + data[i].name;
-                    picDict['width'] = data[i].width;
-                    picDict['height'] = data[i].height;
-                    picDict['activateBoxIndex'] = 0;
-                    var boxes = [];
-                    for(var j = 0; j < data[i].wordsResult.length; j++){
-                        boxes.push({
-                            offsetX1: data[i].wordsResult[j].left,
-                            offsetY1: data[i].wordsResult[j].top,
-                            offsetX2: data[i].wordsResult[j].left + data[i].wordsResult[j].width,
-                            offsetY2: data[i].wordsResult[j].top + data[i].wordsResult[j].height,
-                            x1: data[i].wordsResult[j].left,
-                            y1: data[i].wordsResult[j].top,
-                            x2: data[i].wordsResult[j].left + data[i].wordsResult[j].width,
-                            y2: data[i].wordsResult[j].top + data[i].wordsResult[j].height,
-                            id: 0,
-                            label: '1'
-                        });
-                        var charBoxes = data[i].wordsResult[j].simpleChar;
-                        for(var k in charBoxes){
-                            boxes.push({
-                                offsetX1: charBoxes[k].left,
-                                offsetY1: charBoxes[k].top,
-                                offsetX2: charBoxes[k].left + charBoxes[k].width,
-                                offsetY2: charBoxes[k].top + charBoxes[k].height,
-                                x1: charBoxes[k].left,
-                                y1: charBoxes[k].top,
-                                x2: charBoxes[k].left + charBoxes[k].width,
-                                y2: charBoxes[k].top + charBoxes[k].height,
-                                id: 0,
-                                label: '2'
-                            });
-                        }
-                    }
-                    picDict['boxes'] = boxes;
-                    this.picList.push(picDict);
-                }
+                this.picList = data;
+                this.curDir = this.chosenDir;
                 this.curImgIndex = 0;
                 this.isLoad = true;
             },
             // 保存当前图片矩形框信息
             saveThisPic(){
+                this.doCache();
                 var form = new FormData();
                 form.append("data", JSON.stringify(this.picList[this.curImgIndex]));
-                form.append('dirName', this.chosenDir);
+                form.append('dirName', this.curDir);
                 this.$ajax.post(
                     'http://192.168.1.112:8009/backend/upload',
                     form
@@ -356,21 +347,35 @@
             // 调试使用，显示当前矩形框类型的ratio按钮值
             showBoxType(){
               console.log(this.boxType);
+            },
+            saveBoxChar(){
+
+                this.picList[this.curImgIndex].boxes[this.picList[this.curImgIndex].activateBoxIndex].charStr = this.activateChar.trim();
+            },
+            editContent(){
+                this.$refs.inputRef.focus();
+            },
+            cacheAndPreview(){
+                this.doCache();
+                window.open("http://192.168.1.112:8080/#/preview","_blank");
+            },
+            doCache(){
+                var cacheList = []
+                for(var i = 0; i < this.picList[this.curImgIndex].boxes.length; i++){
+                    if(this.picList[this.curImgIndex].boxes[i].label === '2'){
+                        cacheList.push(this.picList[this.curImgIndex].boxes[i]);
+                    }
+                }
+                localStorage.setItem('charList', JSON.stringify(cacheList));
+                localStorage.setItem('picWidth', this.picList[this.curImgIndex].width);
+                localStorage.setItem('picHeight', this.picList[this.curImgIndex].height);
             }
         }
     }
 </script>
 
 <style scoped>
-    .box-point-1{
-        width: 4px;
-        height: 4px;
-        position: absolute;
-        background-color: #ffffff;
-        border: #000 solid 1px;
-        z-index: 9999;
-    }
-    .box-point-2{
+    .pointer{
         width: 4px;
         height: 4px;
         position: absolute;
@@ -379,7 +384,7 @@
         z-index: 9999;
     }
     .box-content{
-        border: chartreuse solid 1px;
+        border: chartreuse solid 2px;
         position: absolute;
         z-index: 999;
         cursor: move;

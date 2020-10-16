@@ -5,7 +5,10 @@ import store from './store'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import axios from 'axios'
+import contentmenu from 'v-contextmenu'
+import 'v-contextmenu/dist/index.css'
 
+Vue.use(contentmenu)
 Vue.use(ElementUI)
 Vue.config.productionTip = false
 Vue.prototype.$ajax = axios
